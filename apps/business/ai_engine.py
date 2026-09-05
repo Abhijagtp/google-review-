@@ -186,7 +186,7 @@ Generate EXACTLY 3 distinct review options in JSON array format:
 
 Return ONLY a valid JSON array containing 3 review strings."""
 
-        llm_results = _call_live_llm(ai_config.provider, ai_config.api_key, ai_config.model_name, system_prompt, user_prompt)
+        llm_results = _call_live_llm(ai_config.provider, ai_config.decrypted_api_key, ai_config.model_name, system_prompt, user_prompt)
         if llm_results and len(llm_results) >= 3:
             return [
                 {"id": 1, "title": "Option 1", "subtitle": "Short & Direct", "text": llm_results[0]},

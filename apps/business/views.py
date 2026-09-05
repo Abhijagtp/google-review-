@@ -22,7 +22,8 @@ from .installer import (
     run_database_migrations,
     is_database_configured,
 )
-from .models import BusinessProfile, AIConfig, default_ai_restrictions
+from .models import BusinessProfile, AIConfig, AIKeyHistory, default_ai_restrictions
+from .key_security import encrypt_key, decrypt_key, mask_key
 from .ai_engine import verify_ai_api_key, generate_ai_review_suggestion, generate_multi_review_options
 from .review_helpers import get_category_config
 
@@ -32,7 +33,7 @@ def generate_qr_code_svg(url: str) -> str:
     Generates a clean SVG string for a given URL using qrcode library.
     """
     try:
-        factory = qrcode.image.svg.SvgImage
+        factory = qrcode.image.svg.SvgPathImage
         img = qrcode.make(url, image_factory=factory)
         stream = io.BytesIO()
         img.save(stream)
@@ -40,6 +41,7 @@ def generate_qr_code_svg(url: str) -> str:
         return svg_text
     except Exception:
         return ""
+
 
 
 def root_view(request):
@@ -277,6 +279,7 @@ def onboarding_view(request):
 def byok_setup_view(request):
     """
     Step 3: BYOK AI Setup View (Protected).
+    Includes API Key History Audit Trail & AES-256 Encryption.
     """
     if not is_database_configured():
         return redirect("business:installer")
@@ -293,9 +296,22 @@ def byok_setup_view(request):
             config_obj = form.save(commit=False)
             config_obj.business = profile
             
-            is_valid, msg = verify_ai_api_key(config_obj.provider, config_obj.api_key, config_obj.model_name)
+            decrypted_key = config_obj.decrypted_api_key
+            is_valid, msg = verify_ai_api_key(config_obj.provider, decrypted_key, config_obj.model_name)
             config_obj.is_active = is_valid
             config_obj.save()
+
+            # Create Key History Audit Record
+            profile.key_history.filter(status='active').update(status='archived')
+            AIKeyHistory.objects.create(
+                business=profile,
+                provider=config_obj.provider,
+                encrypted_api_key=config_obj.api_key,
+                masked_key=config_obj.masked_api_key,
+                model_name=config_obj.model_name,
+                status='active' if is_valid else 'archived',
+                note=f"Key updated by admin. Verification status: {msg}"
+            )
 
             if request.headers.get("HX-Request"):
                 response = HttpResponse(status=200)
@@ -306,10 +322,13 @@ def byok_setup_view(request):
     else:
         form = AIConfigForm(instance=ai_config)
 
+    key_history = profile.key_history.all()[:15]
+
     return render(request, "business/byok_setup.html", {
         "form": form,
         "profile": profile,
         "ai_config": ai_config,
+        "key_history": key_history,
     })
 
 
@@ -318,11 +337,17 @@ def byok_test_key_partial(request):
     HTMX partial to test API key live.
     """
     if request.method == "POST":
-        provider = request.POST.get("provider", "openai")
-        api_key = request.POST.get("api_key", "").strip()
+        provider = request.POST.get("provider", "gemini")
+        api_key_input = request.POST.get("api_key", "").strip()
         model_name = request.POST.get("model_name", "").strip()
 
-        is_valid, msg = verify_ai_api_key(provider, api_key, model_name)
+        # If key input is masked preview, decrypt original key from database
+        if '••••' in api_key_input:
+            profile = BusinessProfile.objects.first()
+            if profile and getattr(profile, 'ai_config', None):
+                api_key_input = profile.ai_config.decrypted_api_key
+
+        is_valid, msg = verify_ai_api_key(provider, api_key_input, model_name)
         if is_valid:
             return HttpResponse(
                 '<div class="p-4 mb-6 text-sm text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 shadow-sm">'
@@ -348,6 +373,60 @@ def byok_test_key_partial(request):
                 f'</div>'
             )
     return HttpResponse("")
+
+
+@login_required(login_url='/admin-login/')
+def rollback_key_view(request, history_id):
+    """
+    1-Click Rollback endpoint to restore a previous API Key from history.
+    """
+    profile = BusinessProfile.objects.first()
+    if not profile:
+        return redirect("business:byok_setup")
+
+    try:
+        item = AIKeyHistory.objects.get(id=history_id, business=profile)
+        profile.key_history.filter(status='active').update(status='archived')
+        item.status = 'active'
+        item.note = 'Restored by admin'
+        item.save()
+
+        ai_config = getattr(profile, 'ai_config', None) or AIConfig(business=profile)
+        ai_config.provider = item.provider
+        ai_config.api_key = item.encrypted_api_key
+        ai_config.model_name = item.model_name
+        
+        is_valid, _ = verify_ai_api_key(item.provider, item.decrypted_api_key, item.model_name)
+        ai_config.is_active = is_valid
+        ai_config.save()
+    except Exception:
+        pass
+
+    return redirect("business:byok_setup")
+
+
+@login_required(login_url='/admin-login/')
+def revoke_key_view(request, history_id):
+    """
+    Revoke a compromised or old API Key endpoint.
+    """
+    profile = BusinessProfile.objects.first()
+    if profile:
+        try:
+            item = AIKeyHistory.objects.get(id=history_id, business=profile)
+            was_active = (item.status == 'active')
+            item.status = 'revoked'
+            item.note = 'Revoked by admin'
+            item.save()
+
+            if was_active and getattr(profile, 'ai_config', None):
+                profile.ai_config.is_active = False
+                profile.ai_config.save()
+        except Exception:
+            pass
+
+    return redirect("business:byok_setup")
+
 
 
 @login_required(login_url='/admin-login/')

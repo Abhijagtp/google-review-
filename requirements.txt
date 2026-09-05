@@ -4,3 +4,4 @@ dj-database-url>=2.2.0
 python-dotenv>=1.0.1
 gunicorn>=23.0.0
 qrcode>=7.4.2
+cryptography>=42.0.0

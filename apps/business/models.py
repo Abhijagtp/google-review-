@@ -65,18 +65,64 @@ class BusinessProfile(models.Model):
 class AIConfig(models.Model):
     PROVIDER_CHOICES = [
         ('openai', 'OpenAI (GPT-4o / GPT-4o-mini)'),
-        ('gemini', 'Google Gemini (Gemini 1.5 Flash / Pro)'),
+        ('gemini', 'Google Gemini (Gemini 2.5 Flash / Pro)'),
         ('groq', 'Groq (Llama 3.1 / Mixtral)'),
         ('anthropic', 'Anthropic (Claude 3.5 Haiku / Sonnet)'),
     ]
 
     business = models.OneToOneField(BusinessProfile, on_delete=models.CASCADE, related_name='ai_config')
-    provider = models.CharField(max_length=50, choices=PROVIDER_CHOICES, default='openai', verbose_name="AI Provider")
+    provider = models.CharField(max_length=50, choices=PROVIDER_CHOICES, default='gemini', verbose_name="AI Provider")
     api_key = models.CharField(max_length=500, verbose_name="API Key")
-    model_name = models.CharField(max_length=100, default='gpt-4o-mini', verbose_name="Model Designation")
+    model_name = models.CharField(max_length=100, default='gemini-2.5-flash', verbose_name="Model Designation")
     is_active = models.BooleanField(default=False, verbose_name="Key Verified & Active")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @property
+    def decrypted_api_key(self) -> str:
+        from .key_security import decrypt_key
+        return decrypt_key(self.api_key)
+
+    @property
+    def masked_api_key(self) -> str:
+        from .key_security import mask_key
+        return mask_key(self.api_key)
+
+    def save(self, *args, **kwargs):
+        from .key_security import encrypt_key
+        if self.api_key and not (self.api_key.startswith("gAAAAA") or self.api_key.startswith("ENC:")):
+            self.api_key = encrypt_key(self.api_key)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.business.name} - {self.provider} ({self.model_name})"
+
+
+class AIKeyHistory(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'Active Key'),
+        ('archived', 'Archived History'),
+        ('revoked', 'Revoked / Compromised'),
+    ]
+
+    business = models.ForeignKey(BusinessProfile, on_delete=models.CASCADE, related_name='key_history')
+    provider = models.CharField(max_length=50, choices=AIConfig.PROVIDER_CHOICES, verbose_name="Provider")
+    encrypted_api_key = models.CharField(max_length=500, verbose_name="Encrypted Key Payload")
+    masked_key = models.CharField(max_length=100, verbose_name="Masked Key Preview")
+    model_name = models.CharField(max_length=100, default='gemini-2.5-flash', verbose_name="Model Name")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active', verbose_name="Key Status")
+    note = models.CharField(max_length=255, blank=True, null=True, verbose_name="Audit Note")
+    created_at = models.DateTimeField(auto_now_add=True)
+    activated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    @property
+    def decrypted_api_key(self) -> str:
+        from .key_security import decrypt_key
+        return decrypt_key(self.encrypted_api_key)
+
+    def __str__(self):
+        return f"{self.provider} ({self.masked_key}) - {self.status}"
+

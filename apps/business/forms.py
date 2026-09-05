@@ -49,14 +49,27 @@ class AIConfigForm(forms.ModelForm):
             'api_key': forms.PasswordInput(attrs={
                 'class': 'w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent font-mono text-sm shadow-sm transition-all',
                 'placeholder': 'sk-... or AIzaSy...',
-                'required': 'required',
                 'render_value': True,
             }),
             'model_name': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent font-mono text-sm shadow-sm transition-all',
-                'placeholder': 'gpt-4o-mini / gemini-1.5-flash',
+                'placeholder': 'gemini-2.5-flash / gpt-4o-mini',
             })
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk and self.instance.api_key:
+            # Render masked key preview in initial value
+            self.initial['api_key'] = self.instance.masked_api_key
+
+    def clean_api_key(self):
+        key = self.cleaned_data.get('api_key', '').strip()
+        if '••••' in key and self.instance and self.instance.pk:
+            # Key was unchanged, retain existing encrypted key
+            return self.instance.api_key
+        return key
+
 
 
 CATEGORY_CHOICES = [
