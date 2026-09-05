@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile.name }} — Business Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTMX CDN -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8fafc;
+        }
+        .bg-subtle-pattern {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .qr-code-svg-container svg {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between bg-subtle-pattern antialiased">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+            
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg shadow-md">
+                    {{ profile.name|slice:":1"|default:"R" }}
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-extrabold text-slate-900 tracking-tight text-lg">{{ profile.name }}</span>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">{{ profile.category }}</span>
+                    </div>
+                    <span class="text-xs text-slate-500 font-medium block">{{ profile.location }}</span>
+                </div>
+            </div>
+
+            <!-- Action Badges -->
+            <div class="flex items-center gap-3">
+                <div class="hidden sm:flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>AI Engine Active</span>
+                </div>
+
+                <a href="{% url 'business:onboarding' %}" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl border border-slate-300 transition-all flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    <span>Edit Context</span>
+                </a>
+
+                <a href="{% url 'business:byok_setup' %}" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl border border-slate-300 transition-all flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+                    <span>BYOK Keys</span>
+                </a>
+
+                <a href="{% url 'business:admin_logout' %}" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 transition-all flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    <span>Sign Out</span>
+                </a>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        <!-- Welcome Banner -->
+        <div class="bg-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div class="relative z-10 space-y-2">
+                <span class="px-3 py-1 bg-sky-500/20 text-sky-300 text-xs font-bold rounded-full uppercase tracking-wider border border-sky-500/30">
+                    Step 4 Complete • Instance Active
+                </span>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Review Generator Dashboard</h1>
+                <p class="text-slate-400 text-sm max-w-xl leading-relaxed">
+                    Share your customer review URL or display your printed QR Code to start boosting Google Reviews automatically.
+                </p>
+            </div>
+
+            <!-- Customer Review Link Widget -->
+            <div class="w-full sm:w-auto bg-slate-800/90 border border-slate-700 rounded-xl p-4 shrink-0 space-y-2">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Customer Review Link</span>
+                <div class="flex items-center gap-2">
+                    <input type="text" readonly value="{{ review_url }}" class="px-3 py-2 bg-slate-900 text-sky-400 font-mono text-xs rounded-lg border border-slate-700 w-full sm:w-64">
+                    <button type="button" onclick="navigator.clipboard.writeText('{{ review_url }}'); alert('Customer Link Copied!');" class="px-3 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg shadow-sm transition-all shrink-0">
+                        Copy
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics Overview Grid (Dynamic Data) -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <!-- Metric 1 -->
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+                <div>
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">AI Reviews Generated</span>
+                    <p class="text-3xl font-extrabold text-slate-900 mt-1">{{ profile.total_ai_generated }}</p>
+                    <span class="text-xs font-semibold text-slate-500 flex items-center gap-1 mt-1">
+                        From {{ profile.total_views }} total customer views
+                    </span>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+            </div>
+
+            <!-- Metric 2 -->
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+                <div>
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Copies & Redirects</span>
+                    <p class="text-3xl font-extrabold text-slate-900 mt-1">{{ profile.total_copies_redirects }}</p>
+                    <span class="text-xs font-semibold text-emerald-600 flex items-center gap-1 mt-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        {{ conversion_rate }}% conversion rate
+                    </span>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                </div>
+            </div>
+
+            <!-- Metric 3 -->
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+                <div>
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Active AI Provider</span>
+                    <p class="text-lg font-bold text-slate-900 mt-1 capitalize">{{ ai_config.provider|default:"OpenAI" }}</p>
+                    <span class="text-xs font-medium text-slate-500 block font-mono">{{ ai_config.model_name|default:"gpt-4o-mini" }}</span>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2 Column Layout: Real QR Code + AI Playground -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left: Real QR Code Display Card (1 col) -->
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-6 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                        <h2 class="text-lg font-bold text-slate-900">QR Code Counter Display</h2>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed mb-6">
+                        Print this QR Code or place it on table stands, reception desks, or receipts for instant customer access.
+                    </p>
+
+                    <!-- Real Dynamic Generated SVG QR Code -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-inner">
+                        <div class="w-44 h-44 bg-white p-3 rounded-xl border border-slate-300 shadow-md flex items-center justify-center qr-code-svg-container">
+                            {% if qr_code_svg %}
+                                {{ qr_code_svg|safe }}
+                            {% else %}
+                                <span class="text-xs text-slate-400">QR Code Generation Error</span>
+                            {% endif %}
+                        </div>
+                        <span class="mt-3 text-xs font-bold text-slate-700">Scan to Leave a Review</span>
+                        <span class="text-[11px] text-slate-400 font-mono mt-0.5 truncate max-w-[200px]">{{ review_url }}</span>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex gap-2">
+                    <button type="button" onclick="window.print()" class="w-full py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 transition-all flex items-center justify-center gap-1.5">
+                        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        Print QR Code
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right: Live AI Playground (2 cols) -->
+            <div class="lg:col-span-2 bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6 flex flex-col justify-between">
+                
+                <div>
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900">Live AI Review Playground</h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Test generating reviews live using your business context & BYOK setup.</p>
+                        </div>
+                        <span class="px-3 py-1 bg-purple-50 text-purple-700 text-xs font-bold rounded-full border border-purple-200">
+                            Context Loaded
+                        </span>
+                    </div>
+
+                    <!-- Highlight Tags Selector -->
+                    <form hx-post="{% url 'business:generate_preview' %}" hx-target="#ai-playground-output" hx-indicator="#playground-spinner" class="space-y-6">
+                        {% csrf_token %}
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                                Select Customer Experience Highlights
+                            </label>
+                            <div class="flex flex-wrap gap-2">
+                                <label class="cursor-pointer">
+                                    <input type="checkbox" name="highlights" value="Punctual & Fast Service" class="peer hidden" checked>
+                                    <span class="inline-block px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-slate-900 peer-checked:text-white transition-all shadow-sm">
+                                        ⚡ Fast & Punctual
+                                    </span>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="checkbox" name="highlights" value="Friendly & Professional Staff" class="peer hidden" checked>
+                                    <span class="inline-block px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-slate-900 peer-checked:text-white transition-all shadow-sm">
+                                        😊 Friendly Staff
+                                    </span>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="checkbox" name="highlights" value="Clean & Hygienic Environment" class="peer hidden">
+                                    <span class="inline-block px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-slate-900 peer-checked:text-white transition-all shadow-sm">
+                                        ✨ Clean & Clean
+                                    </span>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="checkbox" name="highlights" value="Fair & Transparent Pricing" class="peer hidden">
+                                    <span class="inline-block px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-slate-900 peer-checked:text-white transition-all shadow-sm">
+                                        🏷️ Fair Pricing
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            <span>Generate AI Review Suggestion</span>
+                            <div id="playground-spinner" class="htmx-indicator">
+                                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            </div>
+                        </button>
+                    </form>
+
+                    <!-- Output Area -->
+                    <div id="ai-playground-output" class="mt-6">
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-400 italic text-center">
+                            Select highlights above and click generate to test AI review generation...
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400 font-medium">
+            AI Review Booster • Turnkey Self-Hosted Instance for {{ profile.name }}
+        </div>
+    </footer>
+
+</body>
+</html>

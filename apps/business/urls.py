@@ -1,0 +1,19 @@
+from django.urls import path
+from . import views
+
+app_name = 'business'
+
+urlpatterns = [
+    path('installer/', views.installer_view, name='installer'),
+    path('installer/test/', views.test_connection_partial, name='test_connection'),
+    path('setup/', views.onboarding_view, name='onboarding'),
+    path('admin-login/', views.admin_login_view, name='admin_login'),
+    path('logout/', views.admin_logout_view, name='admin_logout'),
+    path('ai-setup/', views.byok_setup_view, name='byok_setup'),
+    path('ai-setup/test/', views.byok_test_key_partial, name='test_ai_key'),
+    path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('dashboard/generate-preview/', views.generate_review_preview_partial, name='generate_preview'),
+    path('review/', views.customer_review_view, name='customer_review'),
+    path('review/generate/', views.generate_customer_reviews_partial, name='generate_customer_reviews'),
+    path('review/track-copy/', views.track_copy_redirect_partial, name='track_copy'),
+]

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Share Your Feedback — {{ profile.name }}</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTMX CDN -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bg-subtle-pattern {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between p-3 sm:p-6 bg-subtle-pattern antialiased">
+
+    <!-- Mobile-optimized Top Header -->
+    <header class="max-w-lg mx-auto w-full flex items-center justify-between py-3">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-base shadow-md shrink-0">
+                {{ profile.name|slice:":1"|default:"R" }}
+            </div>
+            <div>
+                <h1 class="font-extrabold text-slate-900 tracking-tight text-base sm:text-lg leading-snug">{{ profile.name }}</h1>
+                <span class="text-[11px] text-slate-500 font-medium block">{{ profile.category }} • {{ profile.location }}</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold shrink-0">
+            <svg class="w-3.5 h-3.5 text-amber-500 fill-amber-500" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+            <span>5.0</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-lg mx-auto my-auto py-3 sm:py-6">
+        
+        <!-- Main Card -->
+        <div class="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-8 shadow-xl shadow-slate-200/60">
+            
+            <!-- Step Container (HTMX Target) -->
+            <div id="review-flow-container">
+                
+                <div class="mb-6">
+                    <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">How was your experience?</h2>
+                    <p class="mt-1 text-xs sm:text-sm text-slate-600">Select what you enjoyed to help us put your review into words.</p>
+                </div>
+
+                <form 
+                    hx-post="{% url 'business:generate_customer_reviews' %}" 
+                    hx-target="#review-flow-container" 
+                    hx-indicator="#loading-indicator" 
+                    class="space-y-6">
+                    {% csrf_token %}
+
+                    <!-- QUESTION 1: What did you enjoy? -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">
+                            1. What did you enjoy? <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="flex flex-wrap gap-2">
+                            {% for opt in enjoyment_options %}
+                            <label class="cursor-pointer">
+                                <input type="checkbox" name="enjoyed" value="{{ opt }}" class="peer hidden" {% if forloop.first %}checked{% endif %}>
+                                <span class="inline-block px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-slate-900 peer-checked:text-white peer-checked:border-slate-900 transition-all hover:bg-slate-100 shadow-sm active:scale-95">
+                                    {{ opt }}
+                                </span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- QUESTION 2: What did you have / use? -->
+                    <div>
+                        <label for="id_item_used" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                            2. {{ order_label }} <span class="text-rose-500">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="item_used" 
+                            id="id_item_used" 
+                            required
+                            class="w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm shadow-sm transition-all"
+                            placeholder="{{ order_placeholder }}"
+                            autocomplete="off">
+                    </div>
+
+                    <!-- QUESTION 3: What stood out about your experience? -->
+                    <div>
+                        <label for="id_stood_out" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                            3. What stood out about your experience? <span class="text-slate-400 font-normal">(Optional)</span>
+                        </label>
+                        <textarea 
+                            name="stood_out" 
+                            id="id_stood_out" 
+                            rows="2"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm shadow-sm transition-all resize-y"
+                            placeholder="Tell us what you liked, what stood out, or anything you think we could improve."></textarea>
+                    </div>
+
+                    <!-- Primary Action Button -->
+                    <div class="pt-2">
+                        <button 
+                            type="submit" 
+                            class="w-full py-4 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold text-base rounded-xl shadow-lg shadow-slate-900/10 transition-all flex items-center justify-center gap-2 active:scale-[0.99]">
+                            <span>Continue</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </button>
+                    </div>
+
+                </form>
+
+                <!-- Loading Indicator State -->
+                <div id="loading-indicator" class="htmx-indicator py-12 text-center space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto shadow-inner">
+                        <svg class="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                    <div class="space-y-1">
+                        <h3 class="font-bold text-slate-900 text-base">Putting your experience into words...</h3>
+                        <p class="text-xs text-slate-500">Generating personalized review options grounded in {{ profile.name }} context.</p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-lg mx-auto w-full text-center py-3">
+        <p class="text-[11px] text-slate-400 font-medium">Powered by AI Review Booster • {{ profile.name }}</p>
+    </footer>
+
+</body>
+</html>
