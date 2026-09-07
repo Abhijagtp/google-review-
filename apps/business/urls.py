@@ -19,4 +19,7 @@ urlpatterns = [
     path('review/', views.customer_review_view, name='customer_review'),
     path('review/generate/', views.generate_customer_reviews_partial, name='generate_customer_reviews'),
     path('review/track-copy/', views.track_copy_redirect_partial, name='track_copy'),
+    path('health/', views.health_check_view, name='health_check'),
+    path('ping/', views.health_check_view, name='ping'),
 ]
+

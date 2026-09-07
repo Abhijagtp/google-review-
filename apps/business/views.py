@@ -3,8 +3,9 @@ import io
 import qrcode
 import qrcode.image.svg
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth import authenticate, login, logout
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from .forms import (
@@ -551,3 +552,15 @@ def track_copy_redirect_partial(request):
         profile.total_copies_redirects += 1
         profile.save(update_fields=['total_copies_redirects'])
     return HttpResponse("OK")
+
+
+def health_check_view(request):
+    """
+    Lightweight 200 OK ping endpoint for UptimeRobot, Render health checks, & uptime monitoring.
+    """
+    return JsonResponse({
+        "status": "healthy",
+        "service": "AI Review Booster",
+        "database_configured": is_database_configured(),
+    }, status=200)
+
