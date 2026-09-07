@@ -494,13 +494,17 @@ def customer_review_view(request):
     Public Customer Review Page (/review/) — 100% PUBLIC.
     Tracks dynamic customer page views.
     """
-    profile = BusinessProfile.objects.first()
-    if not profile:
+    if not is_database_configured():
         return redirect("business:installer")
+
+    profile = BusinessProfile.objects.first()
+    if not profile or not profile.is_configured:
+        return render(request, "business/setup_pending.html")
 
     # Increment total_views metric dynamically
     profile.total_views += 1
     profile.save(update_fields=['total_views'])
+
 
     cat_config = get_category_config(profile.category)
 
