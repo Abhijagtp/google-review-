@@ -6,6 +6,7 @@ app_name = 'business'
 urlpatterns = [
     path('installer/', views.installer_view, name='installer'),
     path('installer/test/', views.test_connection_partial, name='test_connection'),
+    path('create-admin/', views.create_admin_view, name='create_admin'),
     path('setup/', views.onboarding_view, name='onboarding'),
     path('admin-login/', views.admin_login_view, name='admin_login'),
     path('logout/', views.admin_logout_view, name='admin_logout'),

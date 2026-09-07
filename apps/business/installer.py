@@ -105,8 +105,13 @@ def run_database_migrations() -> tuple[bool, str]:
 
 def get_env_database_url() -> str:
     """
-    Reads DATABASE_URL directly from the .env file on disk.
+    Reads DATABASE_URL from environment variables or directly from the .env file on disk.
+    Strips quotes and surrounding whitespace.
     """
+    url = os.environ.get("DATABASE_URL", "").strip().strip("'\"")
+    if url:
+        return url
+
     env_file = settings.BASE_DIR / '.env'
     if not env_file.exists():
         return ""
@@ -115,7 +120,9 @@ def get_env_database_url() -> str:
             for line in f:
                 line = line.strip()
                 if line.startswith("DATABASE_URL="):
-                    return line.split("=", 1)[1].strip()
+                    val = line.split("=", 1)[1].strip().strip("'\"")
+                    if val:
+                        return val
     except Exception:
         pass
     return ""
@@ -123,14 +130,19 @@ def get_env_database_url() -> str:
 
 def is_database_configured() -> bool:
     """
-    Checks if a valid DATABASE_URL exists in the .env file and can connect to PostgreSQL.
+    Strong check to verify if DATABASE_URL is already configured.
+    If DATABASE_URL exists in .env or environment, database is configured.
+    Never re-prompts installer if database connection URL is present.
     """
     db_url = get_env_database_url()
-    if not db_url:
-        os.environ["DATABASE_URL"] = ""
-        return False
+    if db_url and (db_url.startswith("postgres://") or db_url.startswith("postgresql://") or db_url.startswith("sqlite://")):
+        return True
     
-    # Quick check if it's a valid PostgreSQL connection
-    success, _ = test_database_connection(db_url)
-    return success
+    # Also check if settings.DATABASES has a configured default engine (e.g., sqlite or postgres)
+    default_db = getattr(settings, 'DATABASES', {}).get('default', {})
+    if default_db and default_db.get('NAME'):
+        return True
+
+    return False
+
 

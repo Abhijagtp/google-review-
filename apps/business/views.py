@@ -13,6 +13,7 @@ from .forms import (
     BusinessContextForm,
     AIConfigForm,
     AdminLoginForm,
+    AdminRegisterForm,
     BRAND_TONE_CHOICES,
     LANGUAGE_CHOICES,
     TARGET_CUSTOMER_CHOICES,
@@ -52,6 +53,13 @@ def root_view(request):
     if not is_database_configured():
         return redirect("business:installer")
 
+    # If no admin superuser account exists yet, redirect to admin registration first
+    if not User.objects.filter(is_staff=True).exists() and not User.objects.filter(is_superuser=True).exists():
+        return redirect("business:create_admin")
+
+    if request.user.is_authenticated:
+        return redirect("business:dashboard")
+
     try:
         profile = BusinessProfile.objects.first()
         if not profile or not profile.is_configured:
@@ -59,10 +67,50 @@ def root_view(request):
     except Exception:
         return redirect("business:onboarding")
 
-    if request.user.is_authenticated:
-        return redirect("business:dashboard")
-    
     return redirect("business:admin_login")
+
+
+def create_admin_view(request):
+    """
+    Step 1: Business creates Admin Username & Password before filling the business profile setup form.
+    """
+    if not is_database_configured():
+        return redirect("business:installer")
+
+    # If admin user already exists and is logged in, move forward
+    if request.user.is_authenticated:
+        profile = BusinessProfile.objects.first()
+        if profile and profile.is_configured:
+            return redirect("business:dashboard")
+        return redirect("business:onboarding")
+
+    form = AdminRegisterForm()
+    error_message = None
+
+    if request.method == "POST":
+        form = AdminRegisterForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data["username"].strip()
+            password = form.cleaned_data["password"]
+
+            if User.objects.filter(username=username).exists():
+                error_message = "Admin username already exists. Please choose another or sign in."
+            else:
+                user = User.objects.create_user(username=username, password=password)
+                user.is_staff = True
+                user.is_superuser = True
+                user.save()
+                
+                # Sign in newly created admin user
+                login(request, user)
+                
+                # Proceed to business setup form
+                return redirect("business:onboarding")
+
+    return render(request, "business/create_admin.html", {
+        "form": form,
+        "error_message": error_message,
+    })
 
 
 def admin_login_view(request):
@@ -108,9 +156,11 @@ def admin_logout_view(request):
 def installer_view(request):
     """
     Step 0: Web Installer View.
+    Never display or ask for DB URL if database is already configured.
     """
     if is_database_configured():
-        return redirect("business:onboarding")
+        # Database URL is already configured in .env / environment - strictly redirect away!
+        return redirect("root")
 
     form = DatabaseInstallerForm()
 
@@ -207,7 +257,8 @@ def test_connection_partial(request):
 
 def onboarding_view(request):
     """
-    Step 1: Business AI Context Setup View.
+    Step 2: Business AI Context Setup & Edit View.
+    Fully loads existing context when editing so re-saving preserves all context data.
     """
     if not is_database_configured():
         return redirect("business:installer")
@@ -220,6 +271,7 @@ def onboarding_view(request):
         brand_tone = request.POST.getlist("brand_tone")
         preferred_languages = request.POST.getlist("preferred_languages")
         target_customers = request.POST.getlist("target_customers")
+        preferred_language_other = request.POST.get("preferred_language_other", "").strip()
         
         products_json = request.POST.get("products_services_data", "[]")
         try:
@@ -239,32 +291,29 @@ def onboarding_view(request):
         except Exception:
             faqs = []
 
-        admin_uname = request.POST.get("admin_username", "").strip()
-        admin_pwd = request.POST.get("admin_password", "").strip()
-
         if form.is_valid():
             obj = form.save(commit=False)
             obj.brand_tone = brand_tone
             obj.preferred_languages = preferred_languages
+            obj.preferred_language_other = preferred_language_other
             obj.target_customers = target_customers
             obj.products_services = products_services
             obj.main_specialty_products = main_specialty_products
             obj.faqs = faqs
-            obj.default_ai_rules = default_ai_restrictions()
+            if not obj.default_ai_rules:
+                obj.default_ai_rules = default_ai_restrictions()
             obj.is_configured = True
             obj.save()
 
-            if admin_uname and admin_pwd:
-                user, created = User.objects.get_or_create(username=admin_uname)
-                user.set_password(admin_pwd)
-                user.is_staff = True
-                user.is_superuser = True
-                user.save()
-                login(request, user)
-
-            return redirect("business:byok_setup")
+            if request.user.is_authenticated:
+                return redirect("business:dashboard")
+            return redirect("business:admin_login")
     else:
         form = BusinessContextForm(instance=profile)
+
+    products_services_json = json.dumps(profile.products_services or [])
+    specialty_products_json = json.dumps(profile.main_specialty_products or [])
+    faqs_json_str = json.dumps(profile.faqs or [])
 
     return render(request, "business/onboarding.html", {
         "form": form,
@@ -272,7 +321,10 @@ def onboarding_view(request):
         "brand_tone_choices": [c[0] for c in BRAND_TONE_CHOICES],
         "language_choices": [c[0] for c in LANGUAGE_CHOICES],
         "target_customer_choices": [c[0] for c in TARGET_CUSTOMER_CHOICES],
-        "default_ai_rules": default_ai_restrictions(),
+        "default_ai_rules": profile.default_ai_rules or default_ai_restrictions(),
+        "products_services_json": products_services_json,
+        "specialty_products_json": specialty_products_json,
+        "faqs_json": faqs_json_str,
     })
 
 
@@ -430,6 +482,7 @@ def revoke_key_view(request, history_id):
 
 
 
+# Existing secure authentication system preserved for dashboard access.
 @login_required(login_url='/admin-login/')
 def dashboard_view(request):
     """

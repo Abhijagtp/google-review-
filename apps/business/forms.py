@@ -142,27 +142,46 @@ TARGET_CUSTOMER_CHOICES = [
 ]
 
 
-class BusinessContextForm(forms.ModelForm):
-    # Admin Credentials Fields for Onboarding Creation
-    admin_username = forms.CharField(
+class AdminRegisterForm(forms.Form):
+    username = forms.CharField(
         label="Admin Username",
-        required=False,
         widget=forms.TextInput(attrs={
-            'class': 'w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm shadow-sm transition-all',
-            'placeholder': 'Choose an admin username (e.g. admin)',
-            'autocomplete': 'username',
+            "class": "w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm shadow-sm transition-all",
+            "placeholder": "Choose your admin username",
+            "required": "required",
+            "autocomplete": "username",
         })
     )
-    admin_password = forms.CharField(
+    password = forms.CharField(
         label="Admin Password",
-        required=False,
         widget=forms.PasswordInput(attrs={
-            'class': 'w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm shadow-sm transition-all',
-            'placeholder': 'Choose a strong password',
-            'autocomplete': 'new-password',
+            "class": "w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm shadow-sm transition-all",
+            "placeholder": "••••••••",
+            "required": "required",
+            "autocomplete": "new-password",
+        })
+    )
+    confirm_password = forms.CharField(
+        label="Confirm Password",
+        widget=forms.PasswordInput(attrs={
+            "class": "w-full px-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm shadow-sm transition-all",
+            "placeholder": "••••••••",
+            "required": "required",
+            "autocomplete": "new-password",
         })
     )
 
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        confirm_password = cleaned_data.get("confirm_password")
+
+        if password and confirm_password and password != confirm_password:
+            self.add_error("confirm_password", "Passwords do not match.")
+        return cleaned_data
+
+
+class BusinessContextForm(forms.ModelForm):
     category = forms.ChoiceField(
         choices=CATEGORY_CHOICES,
         widget=forms.Select(attrs={

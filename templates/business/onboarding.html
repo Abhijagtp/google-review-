@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Business AI Context Setup — Step 1</title>
+    <title>Business AI Context Setup — Step 2</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,7 +37,7 @@
 
         <div class="flex items-center gap-2 text-xs font-semibold text-slate-600 bg-white border border-slate-200 shadow-sm px-3.5 py-1.5 rounded-full">
             <span class="w-2 h-2 rounded-full bg-blue-600"></span>
-            Step 2 of 4
+            Step 2 of 3: Business Context
         </div>
     </header>
 
@@ -48,10 +48,10 @@
         <div class="mb-6">
             <div class="flex justify-between items-center text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 <span>Business AI Context Setup</span>
-                <span>50% Complete</span>
+                <span>66% Complete</span>
             </div>
             <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                <div class="h-full bg-blue-600 rounded-full transition-all duration-500" style="width: 50%"></div>
+                <div class="h-full bg-blue-600 rounded-full transition-all duration-500" style="width: 66%"></div>
             </div>
         </div>
 
@@ -59,43 +59,17 @@
         <div class="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-10 shadow-xl shadow-slate-200/50">
             
             <div class="mb-8 border-b border-slate-200 pb-6">
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Business Setup & Admin Access</h1>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Business Profile Context Setup</h1>
                 <p class="mt-2 text-sm text-slate-600 leading-relaxed">
-                    Create your Admin credentials to secure your dashboard, then provide your business context for AI review generation.
+                    Provide your business context, tone, and product details for tailored AI review generation.
                 </p>
             </div>
 
-            <form method="POST" id="onboarding-form" class="space-y-10">
+            <form method="POST" id="onboarding-form" class="space-y-10" onsubmit="prepareFormData()">
                 {% csrf_token %}
-                <input type="hidden" name="products_services_data" id="products_services_data" value="[]">
-                <input type="hidden" name="specialty_products_data" id="specialty_products_data" value="[]">
-                <input type="hidden" name="faqs_data" id="faqs_data" value="[]">
-
-                <!-- SECTION 0: ADMIN ACCOUNT CREDENTIALS -->
-                <section class="space-y-5 bg-slate-50 border border-slate-200 p-5 rounded-2xl">
-                    <div class="flex items-center gap-3 border-b border-slate-200 pb-3">
-                        <span class="w-7 h-7 rounded-lg bg-slate-900 text-white font-bold text-xs flex items-center justify-center">🔐</span>
-                        <div>
-                            <h2 class="text-base font-bold text-slate-900">Create Admin Account</h2>
-                            <p class="text-xs text-slate-500">You will use these credentials to sign in to your Business Dashboard.</p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div>
-                            <label for="id_admin_username" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                                Admin Username <span class="text-rose-500">*</span>
-                            </label>
-                            {{ form.admin_username }}
-                        </div>
-                        <div>
-                            <label for="id_admin_password" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                                Admin Password <span class="text-rose-500">*</span>
-                            </label>
-                            {{ form.admin_password }}
-                        </div>
-                    </div>
-                </section>
+                <input type="hidden" name="products_services_data" id="products_services_data" value="{{ products_services_json }}">
+                <input type="hidden" name="specialty_products_data" id="specialty_products_data" value="{{ specialty_products_json }}">
+                <input type="hidden" name="faqs_data" id="faqs_data" value="{{ faqs_json }}">
 
                 <!-- SECTION 1: BUSINESS INFORMATION -->
                 <section class="space-y-5">
@@ -123,7 +97,7 @@
                     </div>
 
                     <!-- Category Other Field (Conditional) -->
-                    <div id="category-other-container" class="hidden">
+                    <div id="category-other-container" class="{% if profile.category != 'Other' %}hidden{% endif %}">
                         <label for="id_category_other" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                             Specify Other Category <span class="text-rose-500">*</span>
                         </label>
@@ -201,7 +175,7 @@
                         <div class="flex flex-wrap gap-2.5">
                             {% for choice in brand_tone_choices %}
                             <label class="cursor-pointer">
-                                <input type="checkbox" name="brand_tone" value="{{ choice }}" class="peer hidden">
+                                <input type="checkbox" name="brand_tone" value="{{ choice }}" class="peer hidden" {% if choice in profile.brand_tone %}checked{% endif %}>
                                 <span class="inline-block px-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-slate-900 peer-checked:text-white peer-checked:border-slate-900 transition-all hover:bg-slate-100 shadow-sm">
                                     {{ choice }}
                                 </span>
@@ -218,15 +192,15 @@
                             </label>
                             <div class="grid grid-cols-3 gap-2">
                                 <label class="cursor-pointer">
-                                    <input type="radio" name="communication_length" value="Short" class="peer hidden" checked>
+                                    <input type="radio" name="communication_length" value="Short" class="peer hidden" {% if profile.communication_length == 'Short' or not profile.communication_length %}checked{% endif %}>
                                     <span class="block py-2.5 text-center bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition-all shadow-sm">Short</span>
                                 </label>
                                 <label class="cursor-pointer">
-                                    <input type="radio" name="communication_length" value="Balanced" class="peer hidden">
+                                    <input type="radio" name="communication_length" value="Balanced" class="peer hidden" {% if profile.communication_length == 'Balanced' %}checked{% endif %}>
                                     <span class="block py-2.5 text-center bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition-all shadow-sm">Balanced</span>
                                 </label>
                                 <label class="cursor-pointer">
-                                    <input type="radio" name="communication_length" value="Detailed" class="peer hidden">
+                                    <input type="radio" name="communication_length" value="Detailed" class="peer hidden" {% if profile.communication_length == 'Detailed' %}checked{% endif %}>
                                     <span class="block py-2.5 text-center bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition-all shadow-sm">Detailed</span>
                                 </label>
                             </div>
@@ -238,19 +212,19 @@
                             </label>
                             <div class="grid grid-cols-2 gap-2">
                                 <label class="cursor-pointer">
-                                    <input type="radio" name="communication_style" value="Simple" class="peer hidden" checked>
+                                    <input type="radio" name="communication_style" value="Simple" class="peer hidden" {% if profile.communication_style == 'Simple' %}checked{% endif %}>
                                     <span class="block py-2.5 text-center bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition-all shadow-sm">Simple</span>
                                 </label>
                                 <label class="cursor-pointer">
-                                    <input type="radio" name="communication_style" value="Conversational" class="peer hidden">
+                                    <input type="radio" name="communication_style" value="Conversational" class="peer hidden" {% if profile.communication_style == 'Conversational' or not profile.communication_style %}checked{% endif %}>
                                     <span class="block py-2.5 text-center bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition-all shadow-sm">Conversational</span>
                                 </label>
                                 <label class="cursor-pointer">
-                                    <input type="radio" name="communication_style" value="Professional" class="peer hidden">
+                                    <input type="radio" name="communication_style" value="Professional" class="peer hidden" {% if profile.communication_style == 'Professional' %}checked{% endif %}>
                                     <span class="block py-2.5 text-center bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition-all shadow-sm">Professional</span>
                                 </label>
                                 <label class="cursor-pointer">
-                                    <input type="radio" name="communication_style" value="Premium" class="peer hidden">
+                                    <input type="radio" name="communication_style" value="Premium" class="peer hidden" {% if profile.communication_style == 'Premium' %}checked{% endif %}>
                                     <span class="block py-2.5 text-center bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition-all shadow-sm">Premium</span>
                                 </label>
                             </div>
@@ -265,7 +239,7 @@
                         <div class="flex flex-wrap gap-2.5">
                             {% for choice in language_choices %}
                             <label class="cursor-pointer">
-                                <input type="checkbox" name="preferred_languages" value="{{ choice }}" onchange="toggleLanguageOther()" class="peer hidden" {% if choice == 'English' %}checked{% endif %}>
+                                <input type="checkbox" name="preferred_languages" value="{{ choice }}" onchange="toggleLanguageOther()" class="peer hidden" {% if choice in profile.preferred_languages or not profile.preferred_languages and choice == 'English' %}checked{% endif %}>
                                 <span class="inline-block px-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-slate-900 peer-checked:text-white peer-checked:border-slate-900 transition-all hover:bg-slate-100 shadow-sm">
                                     {{ choice }}
                                 </span>
@@ -274,11 +248,11 @@
                         </div>
                     </div>
 
-                    <div id="language-other-container" class="hidden">
+                    <div id="language-other-container" class="{% if 'Other' not in profile.preferred_languages %}hidden{% endif %}">
                         <label for="id_preferred_language_other" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                             Specify Other Language <span class="text-rose-500">*</span>
                         </label>
-                        <input type="text" name="preferred_language_other" id="id_preferred_language_other" class="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm shadow-sm" placeholder="e.g., Spanish, French">
+                        <input type="text" name="preferred_language_other" id="id_preferred_language_other" value="{{ profile.preferred_language_other|default:'' }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm shadow-sm" placeholder="e.g., Spanish, French">
                     </div>
                 </section>
 
@@ -381,12 +355,29 @@
                             <div class="flex flex-wrap gap-2.5">
                                 {% for choice in target_customer_choices %}
                                 <label class="cursor-pointer">
-                                    <input type="checkbox" name="target_customers" value="{{ choice }}" class="peer hidden">
+                                    <input type="checkbox" name="target_customers" value="{{ choice }}" class="peer hidden" {% if choice in profile.target_customers %}checked{% endif %}>
                                     <span class="inline-block px-3.5 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-slate-800 peer-checked:text-white transition-all shadow-sm">
                                         {{ choice }}
                                     </span>
                                 </label>
                                 {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- FAQs List Builder -->
+                        <div class="pt-2 border-t border-slate-200/60">
+                            <div class="flex items-center justify-between mb-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Frequently Asked Questions (FAQs)</label>
+                                    <p class="text-xs text-slate-500">Provide common customer Q&As for AI context.</p>
+                                </div>
+                                <button type="button" onclick="addFaqItem()" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-lg transition-all border border-blue-200 flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                    <span>Add FAQ</span>
+                                </button>
+                            </div>
+                            <div id="faqs-list" class="space-y-3">
+                                <!-- Dynamic FAQs -->
                             </div>
                         </div>
 
@@ -404,7 +395,7 @@
 
                 <!-- SUBMIT BUTTON -->
                 <div class="pt-6 border-t border-slate-200">
-                    <button type="submit" onclick="prepareFormData()" class="w-full py-4 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-base shadow-lg shadow-slate-900/10 transition-all flex items-center justify-center gap-2">
+                    <button type="submit" class="w-full py-4 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-base shadow-lg shadow-slate-900/10 transition-all flex items-center justify-center gap-2">
                         <span>Save Business AI Context & Continue</span>
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
@@ -420,11 +411,22 @@
         <p class="text-xs text-slate-400 font-medium">AI Review Booster • Turnkey Self-Hosted Product</p>
     </footer>
 
-    <!-- JAVASCRIPT FOR DYNAMIC UI -->
+    <!-- JAVASCRIPT FOR DYNAMIC UI & CONTEXT PERSISTENCE -->
     <script>
-        let offerings = [
-            { name: '', description: '', category: 'Service' }
-        ];
+        let offerings = {{ products_services_json|safe }};
+        if (!Array.isArray(offerings) || offerings.length === 0) {
+            offerings = [{ name: '', description: '', category: 'Service' }];
+        }
+
+        let savedSpecialties = {{ specialty_products_json|safe }};
+        if (!Array.isArray(savedSpecialties)) {
+            savedSpecialties = [];
+        }
+
+        let faqsList = {{ faqs_json|safe }};
+        if (!Array.isArray(faqsList)) {
+            faqsList = [];
+        }
 
         function renderOfferings() {
             const container = document.getElementById('offerings-list');
@@ -439,8 +441,8 @@
                         ${offerings.length > 1 ? `<button type="button" onclick="removeOfferItem(${index})" class="text-xs font-semibold text-rose-600 hover:text-rose-700">Remove</button>` : ''}
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <input type="text" placeholder="Name (e.g. Teeth Whitening)" value="${item.name}" onchange="updateOfferItem(${index}, 'name', this.value)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none">
-                        <input type="text" placeholder="Short description" value="${item.description}" onchange="updateOfferItem(${index}, 'description', this.value)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none">
+                        <input type="text" placeholder="Name (e.g. Teeth Whitening)" value="${item.name || ''}" oninput="updateOfferItem(${index}, 'name', this.value)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none">
+                        <input type="text" placeholder="Short description" value="${item.description || ''}" oninput="updateOfferItem(${index}, 'description', this.value)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none">
                         <select onchange="updateOfferItem(${index}, 'category', this.value)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none">
                             <option value="Service" ${item.category === 'Service' ? 'selected' : ''}>Service</option>
                             <option value="Product" ${item.category === 'Product' ? 'selected' : ''}>Product</option>
@@ -472,7 +474,9 @@
 
         function updateSpecialtyChecklist() {
             const checklistContainer = document.getElementById('specialty-checklist');
-            const validNames = offerings.map(o => o.name.trim()).filter(n => n.length > 0);
+            const validNames = offerings.map(o => (o.name || '').trim()).filter(n => n.length > 0);
+            
+            const currentlyChecked = Array.from(document.querySelectorAll('input[name="specialty_item"]:checked')).map(c => c.value);
             
             if (validNames.length === 0) {
                 checklistContainer.innerHTML = '<span class="text-xs text-slate-400 italic">Add products or services above to mark specialties...</span>';
@@ -481,16 +485,56 @@
 
             checklistContainer.innerHTML = '';
             validNames.forEach(name => {
+                const isChecked = savedSpecialties.includes(name) || currentlyChecked.includes(name);
                 const label = document.createElement('label');
                 label.className = "cursor-pointer";
                 label.innerHTML = `
-                    <input type="checkbox" name="specialty_item" value="${name}" class="peer hidden">
+                    <input type="checkbox" name="specialty_item" value="${name}" class="peer hidden" ${isChecked ? 'checked' : ''}>
                     <span class="inline-block px-3.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition-all shadow-sm">
                         ⭐ ${name}
                     </span>
                 `;
                 checklistContainer.appendChild(label);
             });
+        }
+
+        function renderFaqs() {
+            const container = document.getElementById('faqs-list');
+            if (!container) return;
+            container.innerHTML = '';
+            if (faqsList.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-400 italic">No FAQs added yet. Click "Add FAQ" to add customer Q&As.</p>';
+                return;
+            }
+            faqsList.forEach((faq, index) => {
+                const card = document.createElement('div');
+                card.className = "p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 relative";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-500">FAQ #${index + 1}</span>
+                        <button type="button" onclick="removeFaqItem(${index})" class="text-xs font-semibold text-rose-600 hover:text-rose-700">Remove</button>
+                    </div>
+                    <div class="space-y-2">
+                        <input type="text" placeholder="Question (e.g. Do you accept emergency appointments?)" value="${faq.question || ''}" oninput="updateFaqItem(${index}, 'question', this.value)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none">
+                        <textarea placeholder="Answer" rows="2" oninput="updateFaqItem(${index}, 'answer', this.value)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none resize-y">${faq.answer || ''}</textarea>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function addFaqItem() {
+            faqsList.push({ question: '', answer: '' });
+            renderFaqs();
+        }
+
+        function removeFaqItem(index) {
+            faqsList.splice(index, 1);
+            renderFaqs();
+        }
+
+        function updateFaqItem(index, field, value) {
+            faqsList[index][field] = value;
         }
 
         function toggleCategoryOther(val) {
@@ -521,16 +565,21 @@
         }
 
         function prepareFormData() {
-            document.getElementById('products_services_data').value = JSON.stringify(offerings);
+            const validOfferings = offerings.filter(o => (o.name || '').trim().length > 0);
+            document.getElementById('products_services_data').value = JSON.stringify(validOfferings);
             
             const checkedSpecialties = Array.from(document.querySelectorAll('input[name="specialty_item"]:checked')).map(c => c.value);
-            document.getElementById('specialty-checklist').value = JSON.stringify(checkedSpecialties);
             document.getElementById('specialty_products_data').value = JSON.stringify(checkedSpecialties);
+            
+            const validFaqs = faqsList.filter(f => (f.question || '').trim().length > 0);
+            document.getElementById('faqs_data').value = JSON.stringify(validFaqs);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             renderOfferings();
+            renderFaqs();
             toggleCategoryOther(document.getElementById('id_category').value);
+            toggleLanguageOther();
         });
     </script>
 </body>
