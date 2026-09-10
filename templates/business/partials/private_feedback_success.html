@@ -1,0 +1,33 @@
+<div class="space-y-6 animate-fade-in py-6 text-center">
+    
+    <!-- Checkmark Success Icon -->
+    <div class="w-16 h-16 mx-auto rounded-3xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+        </svg>
+    </div>
+
+    <div class="space-y-2 max-w-sm mx-auto">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/80 border border-emerald-200 text-emerald-800 text-[11px] font-extrabold uppercase tracking-wide">
+            <span>✅ Private Note Sent</span>
+        </div>
+        <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Thank You For Your Feedback</h3>
+        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            Your notes have been securely delivered to management at <strong>{{ profile.name }}</strong>. If you provided your email or phone number, our hospitality team will reach back out to you shortly!
+        </p>
+    </div>
+
+    <!-- Confirmation Banner -->
+    <div class="p-4 bg-slate-100/90 border border-slate-200/90 rounded-2xl text-xs text-slate-700 font-bold flex items-center justify-center gap-2 max-w-sm mx-auto shadow-sm">
+        <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span>Logged in Management Complaints Inbox</span>
+    </div>
+
+    <div class="pt-2">
+        <a href="{% url 'business:customer_review' %}" 
+           class="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold rounded-2xl shadow-lg transition-all active:scale-95">
+            <span>Done</span>
+        </a>
+    </div>
+
+</div>

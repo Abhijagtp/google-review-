@@ -126,3 +126,26 @@ class AIKeyHistory(models.Model):
     def __str__(self):
         return f"{self.provider} ({self.masked_key}) - {self.status}"
 
+
+class PrivateFeedback(models.Model):
+    STATUS_CHOICES = [
+        ('new', 'New Complaint'),
+        ('in_progress', 'In Progress'),
+        ('resolved', 'Resolved'),
+    ]
+
+    business = models.ForeignKey(BusinessProfile, on_delete=models.CASCADE, related_name='private_feedbacks')
+    enjoyed_options = models.JSONField(default=list, blank=True, verbose_name="Enjoyed Options")
+    item_used = models.CharField(max_length=255, blank=True, verbose_name="Item or Service Used")
+    feedback_text = models.TextField(verbose_name="Complaint / Feedback Details")
+    contact_info = models.CharField(max_length=255, blank=True, verbose_name="Customer Contact (Email or Phone)")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name="Status")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Private Feedback for {self.business.name} ({self.status})"
+

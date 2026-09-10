@@ -1,0 +1,80 @@
+<div class="space-y-6 animate-fade-in text-left">
+    
+    <!-- Heart / Support Header -->
+    <div class="text-center space-y-2">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/10">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+        </div>
+
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100/80 border border-amber-200 text-amber-800 text-[11px] font-extrabold uppercase tracking-wide">
+            <span>💌 Private Management Note</span>
+        </div>
+        <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Help Us Make Things Right</h3>
+        <p class="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-sm mx-auto">
+            We are deeply sorry your experience wasn't up to standard. Your feedback goes directly to management at <strong>{{ profile.name }}</strong>.
+        </p>
+    </div>
+
+    <!-- HTMX Private Feedback Form -->
+    <form 
+        hx-post="{% url 'business:submit_private_feedback' %}" 
+        hx-target="#review-flow-container" 
+        hx-indicator="#loading-indicator" 
+        class="space-y-4 pt-1">
+        {% csrf_token %}
+
+        <input type="hidden" name="item_used" value="{{ item_used }}">
+        <input type="hidden" name="enjoyed_options" value="{{ enjoyed_options_json }}">
+
+        <!-- Question: What went wrong? -->
+        <div class="space-y-1.5">
+            <label for="id_feedback_text" class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                1. What went wrong? <span class="text-rose-500">*</span>
+            </label>
+            <textarea 
+                name="feedback_text" 
+                id="id_feedback_text" 
+                required 
+                rows="3" 
+                class="w-full px-4 py-3 bg-slate-50/90 border border-slate-200 rounded-2xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 text-sm shadow-inner transition-all duration-200 resize-y"
+                placeholder="Tell us what went wrong so we can address it immediately...">{{ initial_feedback }}</textarea>
+        </div>
+
+        <!-- Question: Contact Info (Optional) -->
+        <div class="space-y-1.5">
+            <label for="id_contact_info" class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                <span>2. Your Email or Phone <span class="text-slate-400 font-normal capitalize">(Optional)</span></span>
+                <span class="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">For Hospitality Follow-Up</span>
+            </label>
+            <div class="relative">
+                <input 
+                    type="text" 
+                    name="contact_info" 
+                    id="id_contact_info" 
+                    class="w-full px-4 py-3.5 bg-slate-50/90 border border-slate-200 rounded-2xl text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 text-sm shadow-sm transition-all duration-200"
+                    placeholder="e.g. alex@example.com or +1 555-0199"
+                    autocomplete="off">
+                <div class="absolute right-3.5 top-3.5 text-slate-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                </div>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-snug pt-0.5">
+                💡 Leaving your contact info allows our management team to reach back out to you, offer a resolution, and make things right!
+            </p>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-2 flex items-center gap-2">
+            <button 
+                type="submit" 
+                class="w-full py-4 px-6 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-sm rounded-2xl shadow-xl transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]">
+                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                <span>Send Privately to Manager</span>
+            </button>
+        </div>
+
+    </form>
+
+</div>

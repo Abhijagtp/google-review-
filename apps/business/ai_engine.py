@@ -150,11 +150,74 @@ def _call_live_llm(provider: str, api_key: str, model_name: str, system_prompt: 
     return None
 
 
+NEGATIVE_KEYWORDS = {
+    "bad", "terrible", "horrible", "worst", "dirty", "rude", "poor", "disappointed",
+    "disappointment", "avoid", "disgusting", "never again", "waste of money", "slow",
+    "cold", "stale", "awful", "unfriendly", "overpriced", "scam", "unprofessional",
+    "nasty", "smelly", "uncomfortable", "hate", "pathetic", "cheated", "fraud"
+}
+
+NEGATIVE_PHRASES = [
+    "not good", "not great", "not happy", "never coming back", "don't recommend",
+    "dont recommend", "waste of time", "waste of money", "stay away", "not worth"
+]
+
+FILLER_WORDS = {"bad", "okay", "none", "n/a", "na", "no", "nothing", "nil", "good", "fine", "test", "worst", "ok"}
+
+
+def is_negative_sentiment(*text_inputs: str) -> bool:
+    """
+    Scans customer input text to check if it contains negative feedback or complaint intent.
+    """
+    full_text = " ".join([str(t).lower() for t in text_inputs if t])
+    if not full_text.strip():
+        return False
+
+    cleaned = "".join([c if c.isalnum() or c.isspace() else " " for c in full_text])
+    words = set(cleaned.split())
+
+    if words.intersection(NEGATIVE_KEYWORDS):
+        return True
+
+    for phrase in NEGATIVE_PHRASES:
+        if phrase in cleaned:
+            return True
+
+    return False
+
+
+def sanitize_input_text(text: str) -> str:
+    """
+    Sanitizes filler words or non-noun adjectives ("bad", "none", "n/a") to prevent awkward grammar interpolation.
+    """
+    if not text:
+        return ""
+    cleaned = text.strip()
+    if cleaned.lower() in FILLER_WORDS:
+        return ""
+    return cleaned
+
+
 def generate_multi_review_options(business_profile, enjoyment_chips: list[str], item_used: str = "", stood_out: str = "") -> list[dict]:
     """
     Generates 3 distinct review variations based on customer inputs & Business AI Context.
     Uses BYOK Live LLM if API Key is configured, or falls back to context-grounded template generator.
+    Includes negative feedback detection & input sanitization.
     """
+    # Sanitize customer inputs
+    clean_item = sanitize_input_text(item_used)
+    clean_stood = sanitize_input_text(stood_out)
+
+    # Check for negative feedback
+    if is_negative_sentiment(item_used, stood_out):
+        return [{
+            "id": 1,
+            "is_negative": True,
+            "title": "Private Feedback",
+            "subtitle": "Sent to Owner",
+            "text": "Negative feedback detected."
+        }]
+
     ai_config = getattr(business_profile, "ai_config", None)
     
     # Try Live LLM Call if BYOK is active
@@ -173,16 +236,17 @@ EMOJI & TONE GUIDELINES:
 - Option 2 should be detailed & descriptive with 1-2 natural emojis.
 - Option 3 should be warm & enthusiastic with 2-3 expressive emojis.
 
-STRICT SAFETY RULES:
-- Never invent business facts or pretend something happened when not provided.
+STRICT SAFETY & QUALITY RULES:
+- Never invent fake facts.
+- Ensure 100% natural, grammatically fluent English without awkward word interpolations.
 
 Generate EXACTLY 3 distinct review options in JSON array format:
 ["Option 1 review text...", "Option 2 review text...", "Option 3 review text..."]"""
 
         user_prompt = f"""Customer Feedback:
 - What they enjoyed: {', '.join(enjoyment_chips) if enjoyment_chips else 'great service'}
-- Items/Services used: {item_used or 'N/A'}
-- What stood out: {stood_out or 'N/A'}
+- Items/Services used: {clean_item or 'N/A'}
+- What stood out: {clean_stood or 'N/A'}
 
 Return ONLY a valid JSON array containing 3 review strings."""
 
@@ -198,19 +262,31 @@ Return ONLY a valid JSON array containing 3 review strings."""
     name = business_profile.name or "this business"
     category = (business_profile.category or "business").lower()
     location = f" in {business_profile.location}" if business_profile.location else ""
-    differentiator = business_profile.differentiator or "great quality and service"
-
     enjoyed_str = ", ".join(enjoyment_chips) if enjoyment_chips else "great service"
-    item_str = f" ({item_used})" if item_used.strip() else ""
-    stood_out_str = f" What really stood out to me: {stood_out.strip()}." if stood_out.strip() else ""
 
-    var_1 = f"Had a fantastic experience at {name}{location}! ⭐ Really enjoyed the {enjoyed_str.lower()}{item_str}. Highly recommended!"
-    if stood_out.strip():
-        var_1 += f" {stood_out.strip()}"
+    # Clean differentiator formatting
+    diff_text = business_profile.differentiator.strip() if business_profile.differentiator else ""
+    if diff_text:
+        diff_phrase = f" Their emphasis on {diff_text.lower().rstrip('.')} really stands out."
+    else:
+        diff_phrase = ""
 
-    var_2 = f"Five stars for {name}! ✨ I tried their {item_used if item_used.strip() else category} and was thoroughly impressed. What makes them unique is how {differentiator.lower()}. The {enjoyed_str.lower()} was top notch! 👌{stood_out_str}"
+    # Option 1: Short & Direct
+    item_bracket = f" ({clean_item})" if clean_item else ""
+    var_1 = f"Had a fantastic experience at {name}{location}! ⭐ Really enjoyed the {enjoyed_str.lower()}{item_bracket}. Highly recommended!"
+    if clean_stood:
+        var_1 += f" {clean_stood}."
 
-    var_3 = f"Extremely satisfied with {name}! 🙌 The staff and overall {enjoyed_str.lower()} exceeded my expectations. If you're looking for top quality {category}{location}, look no further! 💯 Will definitely be back."
+    # Option 2: Detailed Experience
+    if clean_item:
+        var_2 = f"Five stars for {name}! ✨ I tried {clean_item} and was thoroughly impressed with the quality. The {enjoyed_str.lower()} was top notch! 👌{diff_phrase}{' What stood out: ' + clean_stood + '.' if clean_stood else ''}"
+    else:
+        var_2 = f"Five stars for {name}! ✨ Visiting {name}{location} was a wonderful experience. The {enjoyed_str.lower()} was top notch! 👌{diff_phrase}{' What stood out: ' + clean_stood + '.' if clean_stood else ''}"
+
+    # Option 3: Warm & Enthusiastic
+    var_3 = f"Extremely satisfied with {name}! 🙌 The overall {enjoyed_str.lower()} exceeded my expectations. If you're looking for top quality {category}{location}, look no further! 💯 Will definitely be back."
+    if clean_stood:
+        var_3 += f" {clean_stood}."
 
     return [
         {"id": 1, "title": "Option 1", "subtitle": "Short & Direct", "text": var_1},

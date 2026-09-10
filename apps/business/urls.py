@@ -17,8 +17,10 @@ urlpatterns = [
     path('dashboard/', views.dashboard_view, name='dashboard'),
 
     path('dashboard/generate-preview/', views.generate_review_preview_partial, name='generate_preview'),
+    path('dashboard/resolve-feedback/<int:feedback_id>/', views.resolve_private_feedback_partial, name='resolve_feedback'),
     path('review/', views.customer_review_view, name='customer_review'),
     path('review/generate/', views.generate_customer_reviews_partial, name='generate_customer_reviews'),
+    path('review/submit-private-feedback/', views.submit_private_feedback_partial, name='submit_private_feedback'),
     path('review/track-copy/', views.track_copy_redirect_partial, name='track_copy'),
     path('health/', views.health_check_view, name='health_check'),
     path('ping/', views.health_check_view, name='ping'),

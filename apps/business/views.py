@@ -24,7 +24,7 @@ from .installer import (
     run_database_migrations,
     is_database_configured,
 )
-from .models import BusinessProfile, AIConfig, AIKeyHistory, default_ai_restrictions
+from .models import BusinessProfile, AIConfig, AIKeyHistory, PrivateFeedback, default_ai_restrictions
 from .key_security import encrypt_key, decrypt_key, mask_key
 from .ai_engine import verify_ai_api_key, generate_ai_review_suggestion, generate_multi_review_options
 from .review_helpers import get_category_config
@@ -509,12 +509,17 @@ def dashboard_view(request):
     if profile.total_views > 0:
         conversion_rate = round((profile.total_copies_redirects / profile.total_views) * 100, 1)
 
+    private_feedbacks = PrivateFeedback.objects.filter(business=profile)
+    new_complaints_count = private_feedbacks.filter(status='new').count()
+
     return render(request, "business/dashboard.html", {
         "profile": profile,
         "ai_config": ai_config,
         "review_url": review_url,
         "qr_code_svg": qr_code_svg,
         "conversion_rate": conversion_rate,
+        "private_feedbacks": private_feedbacks,
+        "new_complaints_count": new_complaints_count,
     })
 
 
@@ -589,11 +594,67 @@ def generate_customer_reviews_partial(request):
 
     options = generate_multi_review_options(profile, enjoyment_chips, item_used, stood_out)
 
+    if options and isinstance(options, list) and options[0].get("is_negative"):
+        initial_feedback = stood_out if stood_out else (item_used if item_used else "")
+        return render(request, "business/partials/private_feedback_response.html", {
+            "profile": profile,
+            "initial_feedback": initial_feedback,
+            "item_used": item_used,
+            "enjoyed_options_json": json.dumps(enjoyment_chips),
+        })
+
     return render(request, "business/partials/customer_review_options.html", {
         "profile": profile,
         "options": options,
         "google_review_url": profile.google_review_url,
     })
+
+
+def submit_private_feedback_partial(request):
+    """
+    HTMX partial handling private customer complaint submission with optional contact details.
+    """
+    profile = BusinessProfile.objects.first()
+    if not profile:
+        return HttpResponse('<p class="text-rose-600">Error loading business profile.</p>')
+
+    if request.method == "POST":
+        feedback_text = request.POST.get("feedback_text", "").strip()
+        contact_info = request.POST.get("contact_info", "").strip()
+        item_used = request.POST.get("item_used", "").strip()
+        enjoyed_raw = request.POST.get("enjoyed_options", "[]")
+
+        try:
+            enjoyed_options = json.loads(enjoyed_raw)
+        except Exception:
+            enjoyed_options = []
+
+        if feedback_text:
+            PrivateFeedback.objects.create(
+                business=profile,
+                enjoyed_options=enjoyed_options,
+                item_used=item_used,
+                feedback_text=feedback_text,
+                contact_info=contact_info,
+                status='new'
+            )
+
+    return render(request, "business/partials/private_feedback_success.html", {
+        "profile": profile,
+    })
+
+
+@login_required(login_url='/admin-login/')
+def resolve_private_feedback_partial(request, feedback_id):
+    """
+    HTMX endpoint allowing admin to mark private feedback as resolved.
+    """
+    feedback = PrivateFeedback.objects.filter(id=feedback_id).first()
+    if feedback:
+        feedback.status = 'resolved'
+        feedback.save(update_fields=['status'])
+
+    return HttpResponse('<span class="px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">Resolved ✓</span>')
 
 
 def track_copy_redirect_partial(request):
