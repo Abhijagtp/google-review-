@@ -674,7 +674,7 @@ def health_check_view(request):
     """
     return JsonResponse({
         "status": "healthy",
-        "service": "AI Review Booster",
+        "service": "Guest Experience Studio",
         "database_configured": is_database_configured(),
     }, status=200)
 
